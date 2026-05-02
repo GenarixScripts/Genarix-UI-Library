@@ -1,7 +1,7 @@
 --[[
     ╔══════════════════════════════════════════════╗
     ║            GENARIX UI LIBRARY                ║
-    ║            Version: 1.0.0                    ║
+    ║            Version: 1.1.0                    ║
     ║            Creator: Genarix                  ║
     ╚══════════════════════════════════════════════╝
 ]]
@@ -13,7 +13,9 @@ local LocalPlayer = Players.LocalPlayer
 
 local GenarixUI = {}
 
--- TEMA
+-- Variável global para controlar a keybind da janela
+local _windowKeybind = nil
+
 local Theme = {
     Background   = Color3.fromRGB(16, 16, 20),
     Header       = Color3.fromRGB(10, 10, 14),
@@ -35,7 +37,6 @@ local Theme = {
     TabInactive  = Color3.fromRGB(24, 24, 30),
 }
 
--- UTILIDADES
 local function AddCorner(parent, radius)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, radius or 8)
@@ -118,7 +119,6 @@ function GenarixUI:Notify(config)
     local title = config.Title or "Genarix UI"
     local content = config.Content or ""
     local duration = config.Duration or 3
-
     if not NotifContainer then return end
 
     local notif = Instance.new("Frame")
@@ -188,6 +188,15 @@ function GenarixUI:Notify(config)
     end)
 end
 
+-- Função para mudar a keybind da janela externamente
+function GenarixUI:SetToggleKey(newKey)
+    _windowKeybind = newKey
+end
+
+function GenarixUI:GetToggleKey()
+    return _windowKeybind
+end
+
 -- ================================================
 -- CREATE WINDOW
 -- ================================================
@@ -196,11 +205,12 @@ function GenarixUI:CreateWindow(config)
     local windowName = config.Name or "Genarix UI"
     local toggleKeybind = config.Keybind or Enum.KeyCode.K
 
+    _windowKeybind = toggleKeybind
+
     local Window = {}
     Window.Tabs = {}
     Window.ActiveTab = nil
 
-    -- ScreenGui
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "GenarixUI_" .. windowName
     screenGui.ResetOnSpawn = false
@@ -215,7 +225,6 @@ function GenarixUI:CreateWindow(config)
     Window.ScreenGui = screenGui
     EnsureNotifContainer(screenGui)
 
-    -- Main Frame
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
     mainFrame.Size = UDim2.new(0, 520, 0, 380)
@@ -223,15 +232,14 @@ function GenarixUI:CreateWindow(config)
     mainFrame.BackgroundColor3 = Theme.Background
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = true
+    mainFrame.ClipsDescendants = true
     mainFrame.Parent = screenGui
     AddCorner(mainFrame, 12)
     AddStroke(mainFrame, Theme.Accent, 1.5, 0.6)
     AddShadow(mainFrame)
     Window.MainFrame = mainFrame
 
-    -- ==================
     -- HEADER
-    -- ==================
     local header = Instance.new("Frame")
     header.Name = "Header"
     header.Size = UDim2.new(1, 0, 0, 42)
@@ -240,16 +248,13 @@ function GenarixUI:CreateWindow(config)
     header.Parent = mainFrame
     AddCorner(header, 12)
 
-    -- Fix cantos inferiores do header
     local headerFix = Instance.new("Frame")
-    headerFix.Name = "HeaderFix"
     headerFix.Size = UDim2.new(1, 0, 0, 14)
     headerFix.Position = UDim2.new(0, 0, 1, -14)
     headerFix.BackgroundColor3 = Theme.Header
     headerFix.BorderSizePixel = 0
     headerFix.Parent = header
 
-    -- Linha separadora com gradiente
     local sepLine = Instance.new("Frame")
     sepLine.Size = UDim2.new(1, -20, 0, 2)
     sepLine.Position = UDim2.new(0, 10, 1, -1)
@@ -271,9 +276,7 @@ function GenarixUI:CreateWindow(config)
     }
     sepGrad.Parent = sepLine
 
-    -- Ícone
     local icon = Instance.new("TextLabel")
-    icon.Name = "Icon"
     icon.Size = UDim2.new(0, 28, 0, 28)
     icon.Position = UDim2.new(0, 12, 0.5, -14)
     icon.BackgroundColor3 = Theme.Accent
@@ -286,9 +289,7 @@ function GenarixUI:CreateWindow(config)
     icon.Parent = header
     AddCorner(icon, 7)
 
-    -- Título
     local title = Instance.new("TextLabel")
-    title.Name = "Title"
     title.Size = UDim2.new(1, -130, 1, 0)
     title.Position = UDim2.new(0, 48, 0, 0)
     title.BackgroundTransparency = 1
@@ -299,9 +300,7 @@ function GenarixUI:CreateWindow(config)
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = header
 
-    -- Botão Minimizar
     local minimizeBtn = Instance.new("TextButton")
-    minimizeBtn.Name = "Minimize"
     minimizeBtn.Size = UDim2.new(0, 26, 0, 26)
     minimizeBtn.Position = UDim2.new(1, -60, 0.5, -13)
     minimizeBtn.BackgroundColor3 = Theme.Minimize
@@ -315,9 +314,7 @@ function GenarixUI:CreateWindow(config)
     minimizeBtn.Parent = header
     AddCorner(minimizeBtn, 6)
 
-    -- Botão Fechar
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Name = "Close"
     closeBtn.Size = UDim2.new(0, 26, 0, 26)
     closeBtn.Position = UDim2.new(1, -32, 0.5, -13)
     closeBtn.BackgroundColor3 = Theme.Close
@@ -331,7 +328,6 @@ function GenarixUI:CreateWindow(config)
     closeBtn.Parent = header
     AddCorner(closeBtn, 6)
 
-    -- Hover nos botões do header
     for _, btn in pairs({minimizeBtn, closeBtn}) do
         btn.MouseEnter:Connect(function()
             Tween(btn, 0.2, {BackgroundTransparency = 0.5})
@@ -341,11 +337,8 @@ function GenarixUI:CreateWindow(config)
         end)
     end
 
-    -- ==================
-    -- SIDEBAR (TAB BAR)
-    -- ==================
+    -- SIDEBAR
     local sidebar = Instance.new("Frame")
-    sidebar.Name = "Sidebar"
     sidebar.Size = UDim2.new(0, 130, 1, -48)
     sidebar.Position = UDim2.new(0, 0, 0, 44)
     sidebar.BackgroundColor3 = Theme.Surface
@@ -353,7 +346,6 @@ function GenarixUI:CreateWindow(config)
     sidebar.Parent = mainFrame
     AddCorner(sidebar, 12)
 
-    -- Fixes dos cantos
     local sidebarFixTop = Instance.new("Frame")
     sidebarFixTop.Size = UDim2.new(1, 0, 0, 14)
     sidebarFixTop.BackgroundColor3 = Theme.Surface
@@ -367,7 +359,6 @@ function GenarixUI:CreateWindow(config)
     sidebarFixRight.BorderSizePixel = 0
     sidebarFixRight.Parent = sidebar
 
-    -- Separador vertical
     local sidebarSep = Instance.new("Frame")
     sidebarSep.Size = UDim2.new(0, 1, 1, -16)
     sidebarSep.Position = UDim2.new(1, 0, 0, 8)
@@ -376,9 +367,7 @@ function GenarixUI:CreateWindow(config)
     sidebarSep.BorderSizePixel = 0
     sidebarSep.Parent = sidebar
 
-    -- Container dos botões de tab
     local tabButtonContainer = Instance.new("ScrollingFrame")
-    tabButtonContainer.Name = "TabButtons"
     tabButtonContainer.Size = UDim2.new(1, -12, 1, -16)
     tabButtonContainer.Position = UDim2.new(0, 6, 0, 8)
     tabButtonContainer.BackgroundTransparency = 1
@@ -394,20 +383,15 @@ function GenarixUI:CreateWindow(config)
     tabBtnLayout.Padding = UDim.new(0, 4)
     tabBtnLayout.Parent = tabButtonContainer
 
-    -- ==================
     -- CONTENT AREA
-    -- ==================
     local contentArea = Instance.new("Frame")
-    contentArea.Name = "ContentArea"
     contentArea.Size = UDim2.new(1, -138, 1, -52)
     contentArea.Position = UDim2.new(0, 135, 0, 48)
     contentArea.BackgroundTransparency = 1
     contentArea.BorderSizePixel = 0
     contentArea.Parent = mainFrame
 
-    -- ==================
     -- DRAGGING
-    -- ==================
     local dragging = false
     local dragInput = nil
     local dragStart = nil
@@ -418,7 +402,6 @@ function GenarixUI:CreateWindow(config)
             dragging = true
             dragStart = input.Position
             startPos = mainFrame.Position
-
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -445,16 +428,12 @@ function GenarixUI:CreateWindow(config)
         end
     end)
 
-    -- ==================
-    -- MINIMIZE
-    -- ==================
+    -- MINIMIZE / MAXIMIZE
     local minimized = false
     local storedPos = nil
     local originalSize = UDim2.new(0, 520, 0, 380)
 
-    -- Notificação de minimizado
     local minimizeNotif = Instance.new("Frame")
-    minimizeNotif.Name = "MinimizeNotif"
     minimizeNotif.Size = UDim2.new(0, 320, 0, 42)
     minimizeNotif.Position = UDim2.new(0, 15, 1, 10)
     minimizeNotif.BackgroundColor3 = Theme.NotifBg
@@ -473,10 +452,11 @@ function GenarixUI:CreateWindow(config)
     AddCorner(mnAccent, 2)
 
     local mnText = Instance.new("TextLabel")
+    mnText.Name = "MinNotifText"
     mnText.Size = UDim2.new(1, -25, 1, 0)
     mnText.Position = UDim2.new(0, 18, 0, 0)
     mnText.BackgroundTransparency = 1
-    mnText.Text = "Aperte '" .. toggleKeybind.Name .. "' para maximizar a GUI"
+    mnText.Text = "Aperte '" .. _windowKeybind.Name .. "' para maximizar a GUI"
     mnText.TextColor3 = Theme.Text
     mnText.TextSize = 12
     mnText.Font = Enum.Font.GothamSemibold
@@ -486,6 +466,8 @@ function GenarixUI:CreateWindow(config)
     local function doMinimize()
         minimized = true
         storedPos = mainFrame.Position
+        -- Atualizar texto da notificação com a tecla atual
+        mnText.Text = "Aperte '" .. _windowKeybind.Name .. "' para maximizar a GUI"
         Tween(mainFrame, 0.4, {
             Size = UDim2.new(0, 520, 0, 0),
             Position = UDim2.new(
@@ -520,9 +502,7 @@ function GenarixUI:CreateWindow(config)
         doMinimize()
     end)
 
-    -- ==================
     -- CLOSE
-    -- ==================
     closeBtn.MouseButton1Click:Connect(function()
         Tween(mainFrame, 0.3, {
             Size = UDim2.new(0, 520, 0, 0),
@@ -539,12 +519,10 @@ function GenarixUI:CreateWindow(config)
         end)
     end)
 
-    -- ==================
-    -- KEYBIND TOGGLE
-    -- ==================
+    -- KEYBIND TOGGLE - Usa _windowKeybind que pode ser alterada
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
-        if input.KeyCode == toggleKeybind then
+        if input.KeyCode == _windowKeybind then
             if minimized then
                 doMaximize()
             else
@@ -553,12 +531,9 @@ function GenarixUI:CreateWindow(config)
         end
     end)
 
-    -- ==================
     -- ANIMAÇÃO DE ENTRADA
-    -- ==================
     mainFrame.Size = UDim2.new(0, 520, 0, 0)
     mainFrame.Position = UDim2.new(0.5, -260, 0.5, 0)
-    mainFrame.ClipsDescendants = true
     task.delay(0.1, function()
         Tween(mainFrame, 0.5, {
             Size = originalSize,
@@ -578,7 +553,6 @@ function GenarixUI:CreateWindow(config)
         Tab.Sections = {}
         Tab.Name = tabName
 
-        -- Content scroll para esta tab
         local tabContent = Instance.new("ScrollingFrame")
         tabContent.Name = "Tab_" .. tabName
         tabContent.Size = UDim2.new(1, 0, 1, 0)
@@ -600,9 +574,7 @@ function GenarixUI:CreateWindow(config)
 
         AddPadding(tabContent, 4, 4, 4, 4)
 
-        -- Botão da tab no sidebar
         local tabBtn = Instance.new("TextButton")
-        tabBtn.Name = "TabBtn_" .. tabName
         tabBtn.Size = UDim2.new(1, 0, 0, 34)
         tabBtn.BackgroundColor3 = Theme.TabInactive
         tabBtn.BackgroundTransparency = 0.5
@@ -613,9 +585,7 @@ function GenarixUI:CreateWindow(config)
         tabBtn.Parent = tabButtonContainer
         AddCorner(tabBtn, 8)
 
-        -- Indicador lateral
         local indicator = Instance.new("Frame")
-        indicator.Name = "Indicator"
         indicator.Size = UDim2.new(0, 3, 0.6, 0)
         indicator.Position = UDim2.new(0, 0, 0.2, 0)
         indicator.BackgroundColor3 = Theme.Accent
@@ -624,9 +594,7 @@ function GenarixUI:CreateWindow(config)
         indicator.Parent = tabBtn
         AddCorner(indicator, 2)
 
-        -- Ícone da tab
         local iconLabel = Instance.new("TextLabel")
-        iconLabel.Name = "Icon"
         iconLabel.Size = UDim2.new(0, 22, 1, 0)
         iconLabel.Position = UDim2.new(0, 8, 0, 0)
         iconLabel.BackgroundTransparency = 1
@@ -636,9 +604,7 @@ function GenarixUI:CreateWindow(config)
         iconLabel.Font = Enum.Font.Gotham
         iconLabel.Parent = tabBtn
 
-        -- Nome da tab
         local nameLabel = Instance.new("TextLabel")
-        nameLabel.Name = "Name"
         nameLabel.Size = UDim2.new(1, -38, 1, 0)
         nameLabel.Position = UDim2.new(0, 32, 0, 0)
         nameLabel.BackgroundTransparency = 1
@@ -649,7 +615,6 @@ function GenarixUI:CreateWindow(config)
         nameLabel.TextXAlignment = Enum.TextXAlignment.Left
         nameLabel.Parent = tabBtn
 
-        -- Dados da tab
         local tabData = {
             Content = tabContent,
             Button = tabBtn,
@@ -660,9 +625,7 @@ function GenarixUI:CreateWindow(config)
         }
         table.insert(Window.Tabs, tabData)
 
-        -- Função de ativar tab
         local function activateTab()
-            -- Desativar todas
             for _, t in pairs(Window.Tabs) do
                 t.Content.Visible = false
                 Tween(t.Button, 0.25, {BackgroundColor3 = Theme.TabInactive, BackgroundTransparency = 0.5})
@@ -670,7 +633,6 @@ function GenarixUI:CreateWindow(config)
                 t.NameLabel.TextColor3 = Theme.TextDim
                 t.IconLabel.TextColor3 = Theme.TextDim
             end
-            -- Ativar esta
             tabContent.Visible = true
             Tween(tabBtn, 0.25, {BackgroundColor3 = Theme.SurfaceLight, BackgroundTransparency = 0})
             Tween(indicator, 0.25, {BackgroundTransparency = 0})
@@ -681,7 +643,6 @@ function GenarixUI:CreateWindow(config)
 
         tabBtn.MouseButton1Click:Connect(activateTab)
 
-        -- Hover
         tabBtn.MouseEnter:Connect(function()
             if Window.ActiveTab ~= Tab then
                 Tween(tabBtn, 0.2, {BackgroundTransparency = 0.3})
@@ -693,7 +654,6 @@ function GenarixUI:CreateWindow(config)
             end
         end)
 
-        -- Primeira tab ativa automaticamente
         if #Window.Tabs == 1 then
             activateTab()
         end
@@ -724,9 +684,7 @@ function GenarixUI:CreateWindow(config)
             sectionLayout.Padding = UDim.new(0, 7)
             sectionLayout.Parent = sectionFrame
 
-            -- Section title
             local sectionTitle = Instance.new("TextLabel")
-            sectionTitle.Name = "Title"
             sectionTitle.Size = UDim2.new(1, 0, 0, 18)
             sectionTitle.BackgroundTransparency = 1
             sectionTitle.Text = sectionName
@@ -737,7 +695,6 @@ function GenarixUI:CreateWindow(config)
             sectionTitle.LayoutOrder = 0
             sectionTitle.Parent = sectionFrame
 
-            -- Separador do título
             local titleSep = Instance.new("Frame")
             titleSep.Size = UDim2.new(1, 0, 0, 1)
             titleSep.BackgroundColor3 = Theme.Border
@@ -748,9 +705,7 @@ function GenarixUI:CreateWindow(config)
 
             table.insert(Tab.Sections, Section)
 
-            -- ============================================
             -- TOGGLE
-            -- ============================================
             function Section:CreateToggle(toggleConfig)
                 toggleConfig = toggleConfig or {}
                 local tName = toggleConfig.Name or "Toggle"
@@ -761,7 +716,6 @@ function GenarixUI:CreateWindow(config)
                 elementOrder = elementOrder + 1
 
                 local toggleFrame = Instance.new("Frame")
-                toggleFrame.Name = "Toggle_" .. tName
                 toggleFrame.Size = UDim2.new(1, 0, 0, 30)
                 toggleFrame.BackgroundTransparency = 1
                 toggleFrame.LayoutOrder = elementOrder
@@ -839,9 +793,7 @@ function GenarixUI:CreateWindow(config)
                 return ToggleAPI
             end
 
-            -- ============================================
             -- SLIDER
-            -- ============================================
             function Section:CreateSlider(sliderConfig)
                 sliderConfig = sliderConfig or {}
                 local sName = sliderConfig.Name or "Slider"
@@ -855,13 +807,11 @@ function GenarixUI:CreateWindow(config)
                 elementOrder = elementOrder + 1
 
                 local sliderFrame = Instance.new("Frame")
-                sliderFrame.Name = "Slider_" .. sName
                 sliderFrame.Size = UDim2.new(1, 0, 0, 48)
                 sliderFrame.BackgroundTransparency = 1
                 sliderFrame.LayoutOrder = elementOrder
                 sliderFrame.Parent = sectionFrame
 
-                -- Header do slider
                 local sliderHeader = Instance.new("Frame")
                 sliderHeader.Size = UDim2.new(1, 0, 0, 18)
                 sliderHeader.BackgroundTransparency = 1
@@ -888,7 +838,6 @@ function GenarixUI:CreateWindow(config)
                 sliderValue.TextXAlignment = Enum.TextXAlignment.Right
                 sliderValue.Parent = sliderHeader
 
-                -- Barra do slider
                 local sliderBg = Instance.new("Frame")
                 sliderBg.Size = UDim2.new(1, 0, 0, 6)
                 sliderBg.Position = UDim2.new(0, 0, 0, 26)
@@ -913,7 +862,6 @@ function GenarixUI:CreateWindow(config)
                 }
                 fillGrad.Parent = sliderFill
 
-                -- Knob
                 local sliderKnob = Instance.new("Frame")
                 sliderKnob.Size = UDim2.new(0, 14, 0, 14)
                 sliderKnob.Position = UDim2.new(initRel, -7, 0.5, -7)
@@ -1000,21 +948,19 @@ function GenarixUI:CreateWindow(config)
                 return SliderAPI
             end
 
-            -- ============================================
             -- KEYBIND
-            -- ============================================
             function Section:CreateKeybind(kbConfig)
                 kbConfig = kbConfig or {}
                 local kName = kbConfig.Name or "Keybind"
                 local kDefault = kbConfig.Default or Enum.KeyCode.Unknown
                 local kCallback = kbConfig.Callback or function() end
+                local kFlag = kbConfig.Flag or nil
 
                 local currentKey = kDefault
                 local listening = false
                 elementOrder = elementOrder + 1
 
                 local kbFrame = Instance.new("Frame")
-                kbFrame.Name = "Keybind_" .. kName
                 kbFrame.Size = UDim2.new(1, 0, 0, 30)
                 kbFrame.BackgroundTransparency = 1
                 kbFrame.LayoutOrder = elementOrder
@@ -1068,6 +1014,11 @@ function GenarixUI:CreateWindow(config)
                             kbBtn.Text = currentKey.Name
                             listening = false
                             Tween(kbBtn, 0.2, {BackgroundColor3 = Theme.SliderBg})
+
+                            -- Se for a flag "GUIToggle", atualiza a keybind global
+                            if kFlag == "GUIToggle" then
+                                _windowKeybind = currentKey
+                            end
                         end
                     else
                         if not gameProcessed and input.KeyCode == currentKey then
@@ -1080,6 +1031,9 @@ function GenarixUI:CreateWindow(config)
                 function KeybindAPI:Set(key)
                     currentKey = key
                     kbBtn.Text = key.Name
+                    if kFlag == "GUIToggle" then
+                        _windowKeybind = key
+                    end
                 end
                 function KeybindAPI:Get()
                     return currentKey
