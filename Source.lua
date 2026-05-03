@@ -1,7 +1,7 @@
 --[[
     ╔══════════════════════════════════════════════╗
     ║            GENARIX UI LIBRARY                ║
-    ║            Version: 2.1.0                    ║
+    ║            Version: 2.2.0                    ║
     ║            Creator: Genarix                  ║
     ║            Universal UI Library              ║
     ╚══════════════════════════════════════════════╝
@@ -92,21 +92,6 @@ local function RegisterAccent(obj, property)
     table.insert(_allAccentObjects, {Object = obj, Property = property})
 end
 
--- Converter input para nome legível
-local function GetInputName(inputType, keyCode)
-    if inputType == "Keyboard" then
-        return keyCode.Name
-    elseif inputType == "MouseButton1" then
-        return "Mouse1"
-    elseif inputType == "MouseButton2" then
-        return "Mouse2"
-    elseif inputType == "MouseButton3" then
-        return "Mouse3"
-    else
-        return "None"
-    end
-end
-
 function GenarixUI:SetAccentColor(color)
     _currentAccentColor = color
     Theme.Accent = color
@@ -121,9 +106,9 @@ function GenarixUI:SetAccentColor(color)
     end
 end
 
-function GenarixUI:GetAccentColor()
-    return _currentAccentColor
-end
+function GenarixUI:GetAccentColor() return _currentAccentColor end
+function GenarixUI:SetToggleKey(k) _windowKeybind = k end
+function GenarixUI:GetToggleKey() return _windowKeybind end
 
 -- NOTIFICATION
 local NotifContainer = nil
@@ -144,9 +129,9 @@ end
 
 function GenarixUI:Notify(config)
     config = config or {}
-    local title = config.Title or "Genarix"
-    local content = config.Content or ""
-    local duration = config.Duration or 3
+    local ntitle = config.Title or "Genarix"
+    local ncontent = config.Content or ""
+    local nduration = config.Duration or 3
     if not NotifContainer then return end
 
     local notif = Instance.new("Frame")
@@ -170,7 +155,7 @@ function GenarixUI:Notify(config)
     tl.Size = UDim2.new(1, -25, 0, 18)
     tl.Position = UDim2.new(0, 18, 0, 8)
     tl.BackgroundTransparency = 1
-    tl.Text = title
+    tl.Text = ntitle
     tl.TextColor3 = _currentAccentColor
     tl.TextSize = 13
     tl.Font = Enum.Font.GothamBold
@@ -182,7 +167,7 @@ function GenarixUI:Notify(config)
     cl.Size = UDim2.new(1, -25, 0, 16)
     cl.Position = UDim2.new(0, 18, 0, 28)
     cl.BackgroundTransparency = 1
-    cl.Text = content
+    cl.Text = ncontent
     cl.TextColor3 = Theme.TextDim
     cl.TextSize = 12
     cl.Font = Enum.Font.Gotham
@@ -208,17 +193,14 @@ function GenarixUI:Notify(config)
 
     Tween(notif, 0.4, {Size = UDim2.new(1, 0, 0, 60)})
     task.delay(0.4, function()
-        Tween(pf, duration, {Size = UDim2.new(0, 0, 1, 0)}, Enum.EasingStyle.Linear)
+        Tween(pf, nduration, {Size = UDim2.new(0, 0, 1, 0)}, Enum.EasingStyle.Linear)
     end)
-    task.delay(duration + 0.5, function()
+    task.delay(nduration + 0.5, function()
         Tween(notif, 0.3, {Size = UDim2.new(1, 0, 0, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
         task.wait(0.35)
         notif:Destroy()
     end)
 end
-
-function GenarixUI:SetToggleKey(newKey) _windowKeybind = newKey end
-function GenarixUI:GetToggleKey() return _windowKeybind end
 
 -- ================================================
 -- CREATE WINDOW
@@ -232,6 +214,9 @@ function GenarixUI:CreateWindow(config)
     local Window = {}
     Window.Tabs = {}
     Window.ActiveTab = nil
+
+    -- Tabela para guardar todos os dropdowns abertos (para fechar e atualizar posição)
+    local _openDropdowns = {}
 
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "GenarixUI_" .. windowName
@@ -281,31 +266,31 @@ function GenarixUI:CreateWindow(config)
     AddCorner(sepLine, 1)
     RegisterAccent(sepLine, "BackgroundColor3")
 
-    local icon = Instance.new("TextLabel")
-    icon.Size = UDim2.new(0, 28, 0, 28)
-    icon.Position = UDim2.new(0, 12, 0.5, -14)
-    icon.BackgroundColor3 = _currentAccentColor
-    icon.BackgroundTransparency = 0.85
-    icon.Text = string.sub(windowName, 1, 1)
-    icon.TextColor3 = _currentAccentColor
-    icon.TextSize = 14
-    icon.Font = Enum.Font.GothamBold
-    icon.BorderSizePixel = 0
-    icon.Parent = header
-    AddCorner(icon, 7)
-    RegisterAccent(icon, "BackgroundColor3")
-    RegisterAccent(icon, "TextColor3")
+    local iconLbl = Instance.new("TextLabel")
+    iconLbl.Size = UDim2.new(0, 28, 0, 28)
+    iconLbl.Position = UDim2.new(0, 12, 0.5, -14)
+    iconLbl.BackgroundColor3 = _currentAccentColor
+    iconLbl.BackgroundTransparency = 0.85
+    iconLbl.Text = string.sub(windowName, 1, 1)
+    iconLbl.TextColor3 = _currentAccentColor
+    iconLbl.TextSize = 14
+    iconLbl.Font = Enum.Font.GothamBold
+    iconLbl.BorderSizePixel = 0
+    iconLbl.Parent = header
+    AddCorner(iconLbl, 7)
+    RegisterAccent(iconLbl, "BackgroundColor3")
+    RegisterAccent(iconLbl, "TextColor3")
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -130, 1, 0)
-    title.Position = UDim2.new(0, 48, 0, 0)
-    title.BackgroundTransparency = 1
-    title.Text = windowName
-    title.TextColor3 = Theme.Text
-    title.TextSize = 16
-    title.Font = Enum.Font.GothamBold
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = header
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -130, 1, 0)
+    titleLbl.Position = UDim2.new(0, 48, 0, 0)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = windowName
+    titleLbl.TextColor3 = Theme.Text
+    titleLbl.TextSize = 16
+    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = header
 
     local minimizeBtn = Instance.new("TextButton")
     minimizeBtn.Size = UDim2.new(0, 26, 0, 26)
@@ -349,26 +334,9 @@ function GenarixUI:CreateWindow(config)
     sidebar.Parent = mainFrame
     AddCorner(sidebar, 12)
 
-    local sFixT = Instance.new("Frame")
-    sFixT.Size = UDim2.new(1, 0, 0, 14)
-    sFixT.BackgroundColor3 = Theme.Surface
-    sFixT.BorderSizePixel = 0
-    sFixT.Parent = sidebar
-
-    local sFixR = Instance.new("Frame")
-    sFixR.Size = UDim2.new(0, 14, 1, 0)
-    sFixR.Position = UDim2.new(1, -14, 0, 0)
-    sFixR.BackgroundColor3 = Theme.Surface
-    sFixR.BorderSizePixel = 0
-    sFixR.Parent = sidebar
-
-    local sSep = Instance.new("Frame")
-    sSep.Size = UDim2.new(0, 1, 1, -16)
-    sSep.Position = UDim2.new(1, 0, 0, 8)
-    sSep.BackgroundColor3 = Theme.Border
-    sSep.BackgroundTransparency = 0.5
-    sSep.BorderSizePixel = 0
-    sSep.Parent = sidebar
+    local sFixT = Instance.new("Frame"); sFixT.Size = UDim2.new(1,0,0,14); sFixT.BackgroundColor3 = Theme.Surface; sFixT.BorderSizePixel = 0; sFixT.Parent = sidebar
+    local sFixR = Instance.new("Frame"); sFixR.Size = UDim2.new(0,14,1,0); sFixR.Position = UDim2.new(1,-14,0,0); sFixR.BackgroundColor3 = Theme.Surface; sFixR.BorderSizePixel = 0; sFixR.Parent = sidebar
+    local sSep = Instance.new("Frame"); sSep.Size = UDim2.new(0,1,1,-16); sSep.Position = UDim2.new(1,0,0,8); sSep.BackgroundColor3 = Theme.Border; sSep.BackgroundTransparency = 0.5; sSep.BorderSizePixel = 0; sSep.Parent = sidebar
 
     local tabBtnContainer = Instance.new("ScrollingFrame")
     tabBtnContainer.Size = UDim2.new(1, -12, 1, -16)
@@ -377,11 +345,7 @@ function GenarixUI:CreateWindow(config)
     tabBtnContainer.ScrollBarThickness = 0
     tabBtnContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
     tabBtnContainer.Parent = sidebar
-
-    local tbLayout = Instance.new("UIListLayout")
-    tbLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    tbLayout.Padding = UDim.new(0, 4)
-    tbLayout.Parent = tabBtnContainer
+    local tbLayout = Instance.new("UIListLayout"); tbLayout.SortOrder = Enum.SortOrder.LayoutOrder; tbLayout.Padding = UDim.new(0, 4); tbLayout.Parent = tabBtnContainer
 
     -- CONTENT
     local contentArea = Instance.new("Frame")
@@ -408,60 +372,43 @@ function GenarixUI:CreateWindow(config)
         end
     end)
 
-    -- MINIMIZE
+    -- MINIMIZE (Agora com notificação que some)
     local minimized = false
     local storedPos = nil
     local originalSize = UDim2.new(0, 550, 0, 400)
 
-    local minNotif = Instance.new("Frame")
-    minNotif.Size = UDim2.new(0, 320, 0, 42)
-    minNotif.Position = UDim2.new(0, 15, 1, 10)
-    minNotif.BackgroundColor3 = Theme.NotifBg
-    minNotif.Visible = false
-    minNotif.Parent = screenGui
-    AddCorner(minNotif, 10)
-    AddStroke(minNotif, _currentAccentColor, 1, 0.4)
-
-    local mnAcc = Instance.new("Frame")
-    mnAcc.Size = UDim2.new(0, 3, 0.6, 0)
-    mnAcc.Position = UDim2.new(0, 8, 0.2, 0)
-    mnAcc.BackgroundColor3 = _currentAccentColor
-    mnAcc.Parent = minNotif
-    AddCorner(mnAcc, 2)
-
-    local mnText = Instance.new("TextLabel")
-    mnText.Size = UDim2.new(1, -25, 1, 0)
-    mnText.Position = UDim2.new(0, 18, 0, 0)
-    mnText.BackgroundTransparency = 1
-    mnText.Text = "Aperte '" .. _windowKeybind.Name .. "' para maximizar"
-    mnText.TextColor3 = Theme.Text
-    mnText.TextSize = 12
-    mnText.Font = Enum.Font.GothamSemibold
-    mnText.TextXAlignment = Enum.TextXAlignment.Left
-    mnText.Parent = minNotif
-
     local function doMinimize()
-        minimized = true; storedPos = mainFrame.Position
-        mnText.Text = "Aperte '" .. _windowKeybind.Name .. "' para maximizar"
-        Tween(mainFrame, 0.4, {Size = UDim2.new(0, 550, 0, 0), Position = UDim2.new(mainFrame.Position.X.Scale, mainFrame.Position.X.Offset, mainFrame.Position.Y.Scale, mainFrame.Position.Y.Offset + 200)}, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+        minimized = true
+        storedPos = mainFrame.Position
+        Tween(mainFrame, 0.4, {
+            Size = UDim2.new(0, 550, 0, 0),
+            Position = UDim2.new(mainFrame.Position.X.Scale, mainFrame.Position.X.Offset, mainFrame.Position.Y.Scale, mainFrame.Position.Y.Offset + 200)
+        }, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
         task.delay(0.4, function() mainFrame.Visible = false end)
-        minNotif.Visible = true; minNotif.Position = UDim2.new(0, 15, 1, 10)
-        Tween(minNotif, 0.5, {Position = UDim2.new(0, 15, 1, -57)})
+
+        -- Notificação que some sozinha
+        GenarixUI:Notify({
+            Title = "Minimizado",
+            Content = "Aperte '" .. _windowKeybind.Name .. "' para maximizar a GUI",
+            Duration = 4
+        })
     end
 
     local function doMaximize()
-        minimized = false; mainFrame.Visible = true
+        minimized = false
+        mainFrame.Visible = true
         local tp = storedPos or UDim2.new(0.5, -275, 0.5, -200)
         mainFrame.Position = UDim2.new(tp.X.Scale, tp.X.Offset, tp.Y.Scale, tp.Y.Offset + 200)
         mainFrame.Size = UDim2.new(0, 550, 0, 0)
         Tween(mainFrame, 0.4, {Size = originalSize, Position = tp})
-        Tween(minNotif, 0.3, {Position = UDim2.new(0, 15, 1, 10)})
-        task.delay(0.3, function() minNotif.Visible = false end)
     end
 
     minimizeBtn.MouseButton1Click:Connect(doMinimize)
     closeBtn.MouseButton1Click:Connect(function()
-        Tween(mainFrame, 0.3, {Size = UDim2.new(0, 550, 0, 0), Position = UDim2.new(mainFrame.Position.X.Scale, mainFrame.Position.X.Offset, mainFrame.Position.Y.Scale, mainFrame.Position.Y.Offset + 200)}, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+        Tween(mainFrame, 0.3, {
+            Size = UDim2.new(0, 550, 0, 0),
+            Position = UDim2.new(mainFrame.Position.X.Scale, mainFrame.Position.X.Offset, mainFrame.Position.Y.Scale, mainFrame.Position.Y.Offset + 200)
+        }, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
         task.delay(0.35, function() screenGui:Destroy() end)
     end)
 
@@ -478,6 +425,13 @@ function GenarixUI:CreateWindow(config)
     task.delay(0.1, function()
         Tween(mainFrame, 0.5, {Size = originalSize, Position = UDim2.new(0.5, -275, 0.5, -200)})
     end)
+
+    -- Função global para fechar todos os dropdowns abertos
+    local function closeAllDropdowns()
+        for _, dd in pairs(_openDropdowns) do
+            if dd.close then dd.close() end
+        end
+    end
 
     -- ================================================
     -- CREATE TAB
@@ -505,6 +459,11 @@ function GenarixUI:CreateWindow(config)
         cLayout.Parent = tabContent
         AddPadding(tabContent, 4, 4, 4, 4)
 
+        -- Fechar dropdowns quando scrollar
+        tabContent:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+            closeAllDropdowns()
+        end)
+
         local tabBtn = Instance.new("TextButton")
         tabBtn.Size = UDim2.new(1, 0, 0, 34)
         tabBtn.BackgroundColor3 = Theme.TabInactive
@@ -526,15 +485,15 @@ function GenarixUI:CreateWindow(config)
         AddCorner(indicator, 2)
         RegisterAccent(indicator, "BackgroundColor3")
 
-        local iconLabel = Instance.new("TextLabel")
-        iconLabel.Size = UDim2.new(0, 22, 1, 0)
-        iconLabel.Position = UDim2.new(0, 8, 0, 0)
-        iconLabel.BackgroundTransparency = 1
-        iconLabel.Text = tabIcon
-        iconLabel.TextColor3 = Theme.TextDim
-        iconLabel.TextSize = 14
-        iconLabel.Font = Enum.Font.Gotham
-        iconLabel.Parent = tabBtn
+        local icoLabel = Instance.new("TextLabel")
+        icoLabel.Size = UDim2.new(0, 22, 1, 0)
+        icoLabel.Position = UDim2.new(0, 8, 0, 0)
+        icoLabel.BackgroundTransparency = 1
+        icoLabel.Text = tabIcon
+        icoLabel.TextColor3 = Theme.TextDim
+        icoLabel.TextSize = 14
+        icoLabel.Font = Enum.Font.Gotham
+        icoLabel.Parent = tabBtn
 
         local nameLabel = Instance.new("TextLabel")
         nameLabel.Size = UDim2.new(1, -38, 1, 0)
@@ -547,10 +506,11 @@ function GenarixUI:CreateWindow(config)
         nameLabel.TextXAlignment = Enum.TextXAlignment.Left
         nameLabel.Parent = tabBtn
 
-        local tabData = {Content = tabContent, Button = tabBtn, Indicator = indicator, NameLabel = nameLabel, IconLabel = iconLabel, Tab = Tab}
+        local tabData = {Content = tabContent, Button = tabBtn, Indicator = indicator, NameLabel = nameLabel, IconLabel = icoLabel, Tab = Tab}
         table.insert(Window.Tabs, tabData)
 
         local function activateTab()
+            closeAllDropdowns()
             for _, t in pairs(Window.Tabs) do
                 t.Content.Visible = false
                 Tween(t.Button, 0.25, {BackgroundColor3 = Theme.TabInactive, BackgroundTransparency = 0.5})
@@ -562,7 +522,7 @@ function GenarixUI:CreateWindow(config)
             Tween(tabBtn, 0.25, {BackgroundColor3 = Theme.SurfaceLight, BackgroundTransparency = 0})
             Tween(indicator, 0.25, {BackgroundTransparency = 0})
             nameLabel.TextColor3 = Theme.Text
-            iconLabel.TextColor3 = _currentAccentColor
+            icoLabel.TextColor3 = _currentAccentColor
             Window.ActiveTab = Tab
         end
 
@@ -622,40 +582,23 @@ function GenarixUI:CreateWindow(config)
                 local cb = cfg.Callback or function() end
                 elementOrder = elementOrder + 1
 
-                local f = Instance.new("Frame")
-                f.Size = UDim2.new(1, 0, 0, 30); f.BackgroundTransparency = 1; f.LayoutOrder = elementOrder; f.Parent = sFrame
-
-                local l = Instance.new("TextLabel")
-                l.Size = UDim2.new(1, -55, 1, 0); l.BackgroundTransparency = 1; l.Text = cfg.Name or "Toggle"
-                l.TextColor3 = Theme.Text; l.TextSize = 13; l.Font = Enum.Font.GothamSemibold; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
-
-                local sw = Instance.new("TextButton")
-                sw.Size = UDim2.new(0, 44, 0, 22); sw.Position = UDim2.new(1, -44, 0.5, -11)
-                sw.BackgroundColor3 = toggled and _currentAccentColor or Theme.ToggleOff; sw.Text = ""; sw.AutoButtonColor = false; sw.Parent = f
-                AddCorner(sw, 11)
-
-                local c = Instance.new("Frame")
-                c.Size = UDim2.new(0, 16, 0, 16)
-                c.Position = toggled and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
-                c.BackgroundColor3 = toggled and Color3.fromRGB(255,255,255) or Theme.TextDim; c.Parent = sw
-                AddCorner(c, 8)
+                local f = Instance.new("Frame"); f.Size = UDim2.new(1,0,0,30); f.BackgroundTransparency = 1; f.LayoutOrder = elementOrder; f.Parent = sFrame
+                local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,-55,1,0); l.BackgroundTransparency = 1; l.Text = cfg.Name or "Toggle"; l.TextColor3 = Theme.Text; l.TextSize = 13; l.Font = Enum.Font.GothamSemibold; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+                local sw = Instance.new("TextButton"); sw.Size = UDim2.new(0,44,0,22); sw.Position = UDim2.new(1,-44,0.5,-11); sw.BackgroundColor3 = toggled and _currentAccentColor or Theme.ToggleOff; sw.Text = ""; sw.AutoButtonColor = false; sw.Parent = f; AddCorner(sw, 11)
+                local ci = Instance.new("Frame"); ci.Size = UDim2.new(0,16,0,16); ci.Position = toggled and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8); ci.BackgroundColor3 = toggled and Color3.fromRGB(255,255,255) or Theme.TextDim; ci.Parent = sw; AddCorner(ci, 8)
 
                 local function upd()
                     if toggled then
-                        Tween(sw, 0.3, {BackgroundColor3 = _currentAccentColor})
-                        Tween(c, 0.3, {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255,255,255)})
+                        Tween(sw, 0.3, {BackgroundColor3 = _currentAccentColor}); Tween(ci, 0.3, {Position = UDim2.new(1,-19,0.5,-8), BackgroundColor3 = Color3.fromRGB(255,255,255)})
                     else
-                        Tween(sw, 0.3, {BackgroundColor3 = Theme.ToggleOff})
-                        Tween(c, 0.3, {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Theme.TextDim})
+                        Tween(sw, 0.3, {BackgroundColor3 = Theme.ToggleOff}); Tween(ci, 0.3, {Position = UDim2.new(0,3,0.5,-8), BackgroundColor3 = Theme.TextDim})
                     end
                     cb(toggled)
                 end
-
                 sw.MouseButton1Click:Connect(function() toggled = not toggled; upd() end)
                 sw.MouseEnter:Connect(function() Tween(sw, 0.15, {BackgroundColor3 = toggled and Theme.AccentGlow or Theme.SurfaceHover}) end)
                 sw.MouseLeave:Connect(function() Tween(sw, 0.15, {BackgroundColor3 = toggled and _currentAccentColor or Theme.ToggleOff}) end)
                 if cfg.Default then cb(true) end
-
                 local API = {}
                 function API:Set(v) toggled = v; upd() end
                 function API:Get() return toggled end
@@ -665,81 +608,58 @@ function GenarixUI:CreateWindow(config)
             -- SLIDER
             function Section:CreateSlider(cfg)
                 cfg = cfg or {}
-                local sMin, sMax, sInc = cfg.Min or 0, cfg.Max or 100, cfg.Increment or 1
-                local currentVal = cfg.Default or sMin
+                local sMin,sMax,sInc = cfg.Min or 0, cfg.Max or 100, cfg.Increment or 1
+                local curVal = cfg.Default or sMin
                 local cb = cfg.Callback or function() end
                 elementOrder = elementOrder + 1
 
-                local f = Instance.new("Frame")
-                f.Size = UDim2.new(1, 0, 0, 48); f.BackgroundTransparency = 1; f.LayoutOrder = elementOrder; f.Parent = sFrame
-
-                local hdr = Instance.new("Frame"); hdr.Size = UDim2.new(1, 0, 0, 18); hdr.BackgroundTransparency = 1; hdr.Parent = f
-                local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(0.6, 0, 1, 0); lbl.BackgroundTransparency = 1; lbl.Text = cfg.Name or "Slider"; lbl.TextColor3 = Theme.Text; lbl.TextSize = 13; lbl.Font = Enum.Font.GothamSemibold; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = hdr
-                local val = Instance.new("TextLabel"); val.Size = UDim2.new(0.4, 0, 1, 0); val.Position = UDim2.new(0.6,0,0,0); val.BackgroundTransparency = 1; val.Text = tostring(currentVal); val.TextColor3 = _currentAccentColor; val.TextSize = 13; val.Font = Enum.Font.GothamBold; val.TextXAlignment = Enum.TextXAlignment.Right; val.Parent = hdr
+                local f = Instance.new("Frame"); f.Size = UDim2.new(1,0,0,48); f.BackgroundTransparency = 1; f.LayoutOrder = elementOrder; f.Parent = sFrame
+                local hdr = Instance.new("Frame"); hdr.Size = UDim2.new(1,0,0,18); hdr.BackgroundTransparency = 1; hdr.Parent = f
+                local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(0.6,0,1,0); lbl.BackgroundTransparency = 1; lbl.Text = cfg.Name or "Slider"; lbl.TextColor3 = Theme.Text; lbl.TextSize = 13; lbl.Font = Enum.Font.GothamSemibold; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = hdr
+                local val = Instance.new("TextLabel"); val.Size = UDim2.new(0.4,0,1,0); val.Position = UDim2.new(0.6,0,0,0); val.BackgroundTransparency = 1; val.Text = tostring(curVal); val.TextColor3 = _currentAccentColor; val.TextSize = 13; val.Font = Enum.Font.GothamBold; val.TextXAlignment = Enum.TextXAlignment.Right; val.Parent = hdr
                 RegisterAccent(val, "TextColor3")
-
-                local bg = Instance.new("Frame"); bg.Size = UDim2.new(1, 0, 0, 6); bg.Position = UDim2.new(0,0,0,26); bg.BackgroundColor3 = Theme.SliderBg; bg.Parent = f; AddCorner(bg, 3)
-                local initR = math.clamp((currentVal - sMin)/(sMax - sMin), 0, 1)
-                local fill = Instance.new("Frame"); fill.Size = UDim2.new(initR, 0, 1, 0); fill.BackgroundColor3 = _currentAccentColor; fill.Parent = bg; AddCorner(fill, 3)
-                RegisterAccent(fill, "BackgroundColor3")
-
-                local knob = Instance.new("Frame"); knob.Size = UDim2.new(0, 14, 0, 14); knob.Position = UDim2.new(initR, -7, 0.5, -7); knob.BackgroundColor3 = Color3.fromRGB(255,255,255); knob.ZIndex = 3; knob.Parent = bg; AddCorner(knob, 7)
-                local knobStr = AddStroke(knob, _currentAccentColor, 2, 0)
-                RegisterAccent(knobStr, "Color")
-
+                local bg = Instance.new("Frame"); bg.Size = UDim2.new(1,0,0,6); bg.Position = UDim2.new(0,0,0,26); bg.BackgroundColor3 = Theme.SliderBg; bg.Parent = f; AddCorner(bg, 3)
+                local iR = math.clamp((curVal-sMin)/(sMax-sMin),0,1)
+                local fill = Instance.new("Frame"); fill.Size = UDim2.new(iR,0,1,0); fill.BackgroundColor3 = _currentAccentColor; fill.Parent = bg; AddCorner(fill, 3); RegisterAccent(fill, "BackgroundColor3")
+                local knob = Instance.new("Frame"); knob.Size = UDim2.new(0,14,0,14); knob.Position = UDim2.new(iR,-7,0.5,-7); knob.BackgroundColor3 = Color3.fromRGB(255,255,255); knob.ZIndex = 3; knob.Parent = bg; AddCorner(knob, 7)
+                local kS = AddStroke(knob, _currentAccentColor, 2, 0); RegisterAccent(kS, "Color")
                 local sliding = false
                 local function upd(input)
-                    local r = math.clamp((input.Position.X - bg.AbsolutePosition.X)/bg.AbsoluteSize.X, 0, 1)
-                    local raw = sMin + (sMax - sMin)*r
-                    local v = math.floor(raw/sInc + 0.5)*sInc
-                    v = math.clamp(v, sMin, sMax)
-                    if sInc >= 1 then v = math.floor(v) else v = tonumber(string.format("%.2f", v)) end
-                    local nr = (v - sMin)/(sMax - sMin)
-                    currentVal = v
-                    Tween(fill, 0.08, {Size = UDim2.new(nr, 0, 1, 0)})
-                    Tween(knob, 0.08, {Position = UDim2.new(nr, -7, 0.5, -7)})
-                    val.Text = tostring(v); cb(v)
+                    local r = math.clamp((input.Position.X-bg.AbsolutePosition.X)/bg.AbsoluteSize.X,0,1)
+                    local raw = sMin+(sMax-sMin)*r; local v = math.floor(raw/sInc+0.5)*sInc; v = math.clamp(v,sMin,sMax)
+                    if sInc >= 1 then v = math.floor(v) else v = tonumber(string.format("%.2f",v)) end
+                    local nr = (v-sMin)/(sMax-sMin); curVal = v
+                    Tween(fill, 0.08, {Size=UDim2.new(nr,0,1,0)}); Tween(knob, 0.08, {Position=UDim2.new(nr,-7,0.5,-7)}); val.Text = tostring(v); cb(v)
                 end
-
-                bg.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true; upd(i) end end)
-                knob.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true end end)
+                bg.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding=true; upd(i) end end)
+                knob.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding=true end end)
                 UserInputService.InputChanged:Connect(function(i) if sliding and i.UserInputType == Enum.UserInputType.MouseMovement then upd(i) end end)
-                UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end end)
-                cb(currentVal)
-
+                UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding=false end end)
+                cb(curVal)
                 local API = {}
-                function API:Set(v) v = math.clamp(v, sMin, sMax); currentVal = v; local r = (v-sMin)/(sMax-sMin); Tween(fill, 0.15, {Size = UDim2.new(r,0,1,0)}); Tween(knob, 0.15, {Position = UDim2.new(r,-7,0.5,-7)}); val.Text = tostring(v); cb(v) end
-                function API:Get() return currentVal end
+                function API:Set(v) v=math.clamp(v,sMin,sMax); curVal=v; local r=(v-sMin)/(sMax-sMin); Tween(fill,0.15,{Size=UDim2.new(r,0,1,0)}); Tween(knob,0.15,{Position=UDim2.new(r,-7,0.5,-7)}); val.Text=tostring(v); cb(v) end
+                function API:Get() return curVal end
                 return API
             end
 
-            -- KEYBIND (Suporta Teclado + Mouse)
+            -- KEYBIND (Mouse + Teclado)
             function Section:CreateKeybind(cfg)
                 cfg = cfg or {}
                 local currentKey = cfg.Default or Enum.KeyCode.Unknown
-                local currentInputType = cfg.DefaultInputType or "Keyboard"
+                local currentInputType = "Keyboard"
                 local cb = cfg.Callback or function() end
                 local flag = cfg.Flag or nil
                 local listening = false
                 elementOrder = elementOrder + 1
 
-                -- Detectar se o default é um UserInputType (mouse)
                 if typeof(cfg.Default) == "EnumItem" then
-                    if cfg.Default == Enum.UserInputType.MouseButton1 then
-                        currentInputType = "MouseButton1"
-                        currentKey = nil
-                    elseif cfg.Default == Enum.UserInputType.MouseButton2 then
-                        currentInputType = "MouseButton2"
-                        currentKey = nil
-                    elseif cfg.Default == Enum.UserInputType.MouseButton3 then
-                        currentInputType = "MouseButton3"
-                        currentKey = nil
-                    else
-                        currentInputType = "Keyboard"
-                    end
+                    if cfg.Default == Enum.UserInputType.MouseButton1 then currentInputType = "MouseButton1"; currentKey = nil
+                    elseif cfg.Default == Enum.UserInputType.MouseButton2 then currentInputType = "MouseButton2"; currentKey = nil
+                    elseif cfg.Default == Enum.UserInputType.MouseButton3 then currentInputType = "MouseButton3"; currentKey = nil
+                    else currentInputType = "Keyboard" end
                 end
 
-                local function getDisplayName()
+                local function getDisplay()
                     if currentInputType == "MouseButton1" then return "Mouse1"
                     elseif currentInputType == "MouseButton2" then return "Mouse2"
                     elseif currentInputType == "MouseButton3" then return "Mouse3"
@@ -747,57 +667,31 @@ function GenarixUI:CreateWindow(config)
                     else return "None" end
                 end
 
-                local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 30); f.BackgroundTransparency = 1; f.LayoutOrder = elementOrder; f.Parent = sFrame
-                local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, -80, 1, 0); l.BackgroundTransparency = 1; l.Text = cfg.Name or "Keybind"; l.TextColor3 = Theme.Text; l.TextSize = 13; l.Font = Enum.Font.GothamSemibold; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
-
-                local btn = Instance.new("TextButton"); btn.Size = UDim2.new(0, 70, 0, 24); btn.Position = UDim2.new(1, -70, 0.5, -12); btn.BackgroundColor3 = Theme.SliderBg
-                btn.Text = getDisplayName(); btn.TextColor3 = _currentAccentColor; btn.TextSize = 12; btn.Font = Enum.Font.GothamBold; btn.AutoButtonColor = false; btn.Parent = f
-                AddCorner(btn, 6); AddStroke(btn, Theme.Border, 1, 0.6)
-                RegisterAccent(btn, "TextColor3")
+                local f = Instance.new("Frame"); f.Size = UDim2.new(1,0,0,30); f.BackgroundTransparency = 1; f.LayoutOrder = elementOrder; f.Parent = sFrame
+                local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,-80,1,0); l.BackgroundTransparency = 1; l.Text = cfg.Name or "Keybind"; l.TextColor3 = Theme.Text; l.TextSize = 13; l.Font = Enum.Font.GothamSemibold; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+                local btn = Instance.new("TextButton"); btn.Size = UDim2.new(0,70,0,24); btn.Position = UDim2.new(1,-70,0.5,-12); btn.BackgroundColor3 = Theme.SliderBg; btn.Text = getDisplay(); btn.TextColor3 = _currentAccentColor; btn.TextSize = 12; btn.Font = Enum.Font.GothamBold; btn.AutoButtonColor = false; btn.Parent = f; AddCorner(btn, 6); AddStroke(btn, Theme.Border, 1, 0.6); RegisterAccent(btn, "TextColor3")
 
                 btn.MouseEnter:Connect(function() if not listening then Tween(btn, 0.15, {BackgroundColor3 = Theme.SurfaceHover}) end end)
                 btn.MouseLeave:Connect(function() if not listening then Tween(btn, 0.15, {BackgroundColor3 = Theme.SliderBg}) end end)
+                btn.MouseButton1Click:Connect(function() listening = true; btn.Text = "..."; Tween(btn, 0.2, {BackgroundColor3 = Theme.AccentDark}) end)
 
-                btn.MouseButton1Click:Connect(function()
-                    listening = true
-                    btn.Text = "..."
-                    Tween(btn, 0.2, {BackgroundColor3 = Theme.AccentDark})
-                end)
-
-                -- Escutar teclado
                 UserInputService.InputBegan:Connect(function(input, gp)
                     if listening then
                         if input.UserInputType == Enum.UserInputType.Keyboard then
-                            currentKey = input.KeyCode
-                            currentInputType = "Keyboard"
-                            btn.Text = getDisplayName()
-                            listening = false
-                            Tween(btn, 0.2, {BackgroundColor3 = Theme.SliderBg})
+                            currentKey = input.KeyCode; currentInputType = "Keyboard"; btn.Text = getDisplay(); listening = false; Tween(btn, 0.2, {BackgroundColor3 = Theme.SliderBg})
                             if flag == "GUIToggle" then _windowKeybind = currentKey end
                         elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-                            currentKey = nil
-                            currentInputType = "MouseButton2"
-                            btn.Text = getDisplayName()
-                            listening = false
-                            Tween(btn, 0.2, {BackgroundColor3 = Theme.SliderBg})
+                            currentKey = nil; currentInputType = "MouseButton2"; btn.Text = getDisplay(); listening = false; Tween(btn, 0.2, {BackgroundColor3 = Theme.SliderBg})
                         elseif input.UserInputType == Enum.UserInputType.MouseButton3 then
-                            currentKey = nil
-                            currentInputType = "MouseButton3"
-                            btn.Text = getDisplayName()
-                            listening = false
-                            Tween(btn, 0.2, {BackgroundColor3 = Theme.SliderBg})
+                            currentKey = nil; currentInputType = "MouseButton3"; btn.Text = getDisplay(); listening = false; Tween(btn, 0.2, {BackgroundColor3 = Theme.SliderBg})
                         end
                     else
                         if not gp then
-                            local shouldFire = false
-                            if currentInputType == "Keyboard" and currentKey and input.KeyCode == currentKey then
-                                shouldFire = true
-                            elseif currentInputType == "MouseButton2" and input.UserInputType == Enum.UserInputType.MouseButton2 then
-                                shouldFire = true
-                            elseif currentInputType == "MouseButton3" and input.UserInputType == Enum.UserInputType.MouseButton3 then
-                                shouldFire = true
-                            end
-                            if shouldFire then cb() end
+                            local fire = false
+                            if currentInputType == "Keyboard" and currentKey and input.KeyCode == currentKey then fire = true
+                            elseif currentInputType == "MouseButton2" and input.UserInputType == Enum.UserInputType.MouseButton2 then fire = true
+                            elseif currentInputType == "MouseButton3" and input.UserInputType == Enum.UserInputType.MouseButton3 then fire = true end
+                            if fire then cb() end
                         end
                     end
                 end)
@@ -805,17 +699,12 @@ function GenarixUI:CreateWindow(config)
                 local API = {}
                 function API:Set(key)
                     if typeof(key) == "EnumItem" then
-                        if key == Enum.UserInputType.MouseButton1 then
-                            currentInputType = "MouseButton1"; currentKey = nil
-                        elseif key == Enum.UserInputType.MouseButton2 then
-                            currentInputType = "MouseButton2"; currentKey = nil
-                        elseif key == Enum.UserInputType.MouseButton3 then
-                            currentInputType = "MouseButton3"; currentKey = nil
-                        else
-                            currentInputType = "Keyboard"; currentKey = key
-                        end
+                        if key == Enum.UserInputType.MouseButton1 then currentInputType="MouseButton1"; currentKey=nil
+                        elseif key == Enum.UserInputType.MouseButton2 then currentInputType="MouseButton2"; currentKey=nil
+                        elseif key == Enum.UserInputType.MouseButton3 then currentInputType="MouseButton3"; currentKey=nil
+                        else currentInputType="Keyboard"; currentKey=key end
                     end
-                    btn.Text = getDisplayName()
+                    btn.Text = getDisplay()
                     if flag == "GUIToggle" and currentKey then _windowKeybind = currentKey end
                 end
                 function API:Get() return currentKey or currentInputType end
@@ -828,31 +717,13 @@ function GenarixUI:CreateWindow(config)
                 cfg = cfg or {}
                 local cb = cfg.Callback or function() end
                 elementOrder = elementOrder + 1
-
-                local btn = Instance.new("TextButton")
-                btn.Size = UDim2.new(1, 0, 0, 32)
-                btn.BackgroundColor3 = _currentAccentColor
-                btn.BackgroundTransparency = 0.8
-                btn.Text = cfg.Name or "Button"
-                btn.TextColor3 = Theme.Text
-                btn.TextSize = 13
-                btn.Font = Enum.Font.GothamSemibold
-                btn.AutoButtonColor = false
-                btn.LayoutOrder = elementOrder
-                btn.Parent = sFrame
-                AddCorner(btn, 8)
-                AddStroke(btn, _currentAccentColor, 1, 0.5)
-
+                local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1,0,0,32); btn.BackgroundColor3 = _currentAccentColor; btn.BackgroundTransparency = 0.8; btn.Text = cfg.Name or "Button"; btn.TextColor3 = Theme.Text; btn.TextSize = 13; btn.Font = Enum.Font.GothamSemibold; btn.AutoButtonColor = false; btn.LayoutOrder = elementOrder; btn.Parent = sFrame; AddCorner(btn, 8); AddStroke(btn, _currentAccentColor, 1, 0.5)
                 btn.MouseEnter:Connect(function() Tween(btn, 0.2, {BackgroundTransparency = 0.5}) end)
                 btn.MouseLeave:Connect(function() Tween(btn, 0.2, {BackgroundTransparency = 0.8}) end)
-                btn.MouseButton1Click:Connect(function()
-                    Tween(btn, 0.1, {BackgroundTransparency = 0.2})
-                    task.delay(0.15, function() Tween(btn, 0.2, {BackgroundTransparency = 0.8}) end)
-                    cb()
-                end)
+                btn.MouseButton1Click:Connect(function() Tween(btn, 0.1, {BackgroundTransparency = 0.2}); task.delay(0.15, function() Tween(btn, 0.2, {BackgroundTransparency = 0.8}) end); cb() end)
             end
 
-            -- DROPDOWN (ZIndex corrigido)
+            -- DROPDOWN (Posição fixa na tela, fecha ao scrollar)
             function Section:CreateDropdown(cfg)
                 cfg = cfg or {}
                 local options = cfg.Options or {}
@@ -861,142 +732,52 @@ function GenarixUI:CreateWindow(config)
                 local isOpen = false
                 elementOrder = elementOrder + 1
 
-                -- Container principal com ZIndex alto
-                local dFrame = Instance.new("Frame")
-                dFrame.Size = UDim2.new(1, 0, 0, 30)
-                dFrame.BackgroundTransparency = 1
-                dFrame.LayoutOrder = elementOrder
-                dFrame.ZIndex = 50
-                dFrame.Parent = sFrame
+                local ddId = tostring(elementOrder) .. tabName .. sectionName
 
-                local dLabel = Instance.new("TextLabel")
-                dLabel.Size = UDim2.new(0.5, 0, 0, 30)
-                dLabel.BackgroundTransparency = 1
-                dLabel.Text = cfg.Name or "Dropdown"
-                dLabel.TextColor3 = Theme.Text
-                dLabel.TextSize = 13
-                dLabel.Font = Enum.Font.GothamSemibold
-                dLabel.TextXAlignment = Enum.TextXAlignment.Left
-                dLabel.ZIndex = 50
-                dLabel.Parent = dFrame
+                local dFrame = Instance.new("Frame"); dFrame.Size = UDim2.new(1,0,0,30); dFrame.BackgroundTransparency = 1; dFrame.LayoutOrder = elementOrder; dFrame.ZIndex = 50; dFrame.Parent = sFrame
+                local dLabel = Instance.new("TextLabel"); dLabel.Size = UDim2.new(0.5,0,0,30); dLabel.BackgroundTransparency = 1; dLabel.Text = cfg.Name or "Dropdown"; dLabel.TextColor3 = Theme.Text; dLabel.TextSize = 13; dLabel.Font = Enum.Font.GothamSemibold; dLabel.TextXAlignment = Enum.TextXAlignment.Left; dLabel.ZIndex = 50; dLabel.Parent = dFrame
 
-                local dBtn = Instance.new("TextButton")
-                dBtn.Size = UDim2.new(0.48, 0, 0, 26)
-                dBtn.Position = UDim2.new(0.52, 0, 0, 2)
-                dBtn.BackgroundColor3 = Theme.SliderBg
-                dBtn.Text = tostring(currentOption) .. " ▾"
-                dBtn.TextColor3 = _currentAccentColor
-                dBtn.TextSize = 12
-                dBtn.Font = Enum.Font.GothamBold
-                dBtn.AutoButtonColor = false
-                dBtn.ZIndex = 51
-                dBtn.Parent = dFrame
-                AddCorner(dBtn, 6)
-                AddStroke(dBtn, Theme.Border, 1, 0.6)
-                RegisterAccent(dBtn, "TextColor3")
+                local dBtn = Instance.new("TextButton"); dBtn.Size = UDim2.new(0.48,0,0,26); dBtn.Position = UDim2.new(0.52,0,0,2); dBtn.BackgroundColor3 = Theme.SliderBg; dBtn.Text = tostring(currentOption).." ▾"; dBtn.TextColor3 = _currentAccentColor; dBtn.TextSize = 12; dBtn.Font = Enum.Font.GothamBold; dBtn.AutoButtonColor = false; dBtn.ZIndex = 51; dBtn.Parent = dFrame; AddCorner(dBtn, 6); AddStroke(dBtn, Theme.Border, 1, 0.6); RegisterAccent(dBtn, "TextColor3")
 
-                -- Frame das opções - FORA do sFrame para não ser cortado
-                local optionsFrame = Instance.new("Frame")
-                optionsFrame.Size = UDim2.new(0, 0, 0, 0)
-                optionsFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
-                optionsFrame.BorderSizePixel = 0
-                optionsFrame.ClipsDescendants = true
-                optionsFrame.ZIndex = 200
-                optionsFrame.Visible = false
-                optionsFrame.Parent = screenGui
-                AddCorner(optionsFrame, 8)
-                AddStroke(optionsFrame, _currentAccentColor, 1, 0.4)
+                local optionsFrame = Instance.new("Frame"); optionsFrame.BackgroundColor3 = Color3.fromRGB(22,22,28); optionsFrame.BorderSizePixel = 0; optionsFrame.ClipsDescendants = true; optionsFrame.ZIndex = 200; optionsFrame.Visible = false; optionsFrame.Size = UDim2.new(0,0,0,0); optionsFrame.Parent = screenGui; AddCorner(optionsFrame, 8); AddStroke(optionsFrame, _currentAccentColor, 1, 0.4)
+                local optLayout = Instance.new("UIListLayout"); optLayout.SortOrder = Enum.SortOrder.LayoutOrder; optLayout.Padding = UDim.new(0,2); optLayout.Parent = optionsFrame; AddPadding(optionsFrame, 4, 4, 4, 4)
 
-                local optLayout = Instance.new("UIListLayout")
-                optLayout.SortOrder = Enum.SortOrder.LayoutOrder
-                optLayout.Padding = UDim.new(0, 2)
-                optLayout.Parent = optionsFrame
-                AddPadding(optionsFrame, 4, 4, 4, 4)
+                local function closeDD()
+                    if not isOpen then return end
+                    isOpen = false
+                    Tween(optionsFrame, 0.2, {Size = UDim2.new(0, dBtn.AbsoluteSize.X, 0, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    task.delay(0.2, function() optionsFrame.Visible = false end)
+                    dBtn.Text = tostring(currentOption).." ▾"
+                    _openDropdowns[ddId] = nil
+                end
 
-                local function updateOptionsPosition()
+                local function openDD()
+                    closeAllDropdowns()
+                    isOpen = true
                     local absPos = dBtn.AbsolutePosition
                     local absSize = dBtn.AbsoluteSize
                     optionsFrame.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 4)
                     optionsFrame.Size = UDim2.new(0, absSize.X, 0, 0)
-                end
-
-                local function closeDropdown()
-                    isOpen = false
-                    local absSize = dBtn.AbsoluteSize
-                    Tween(optionsFrame, 0.2, {Size = UDim2.new(0, absSize.X, 0, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-                    task.delay(0.2, function() optionsFrame.Visible = false end)
-                    dBtn.Text = tostring(currentOption) .. " ▾"
-                end
-
-                local function openDropdown()
-                    isOpen = true
-                    updateOptionsPosition()
                     optionsFrame.Visible = true
-                    local absSize = dBtn.AbsoluteSize
                     local totalH = #options * 28 + 10
                     Tween(optionsFrame, 0.25, {Size = UDim2.new(0, absSize.X, 0, totalH)})
-                    dBtn.Text = tostring(currentOption) .. " ▴"
+                    dBtn.Text = tostring(currentOption).." ▴"
+                    _openDropdowns[ddId] = {close = closeDD}
                 end
 
                 for i, opt in ipairs(options) do
-                    local optBtn = Instance.new("TextButton")
-                    optBtn.Size = UDim2.new(1, 0, 0, 26)
-                    optBtn.BackgroundColor3 = Theme.SurfaceHover
-                    optBtn.BackgroundTransparency = 0.8
-                    optBtn.Text = tostring(opt)
-                    optBtn.TextColor3 = Theme.Text
-                    optBtn.TextSize = 12
-                    optBtn.Font = Enum.Font.Gotham
-                    optBtn.AutoButtonColor = false
-                    optBtn.LayoutOrder = i
-                    optBtn.ZIndex = 201
-                    optBtn.Parent = optionsFrame
-                    AddCorner(optBtn, 4)
-
-                    optBtn.MouseEnter:Connect(function()
-                        Tween(optBtn, 0.15, {BackgroundTransparency = 0.3, BackgroundColor3 = _currentAccentColor})
-                    end)
-                    optBtn.MouseLeave:Connect(function()
-                        Tween(optBtn, 0.15, {BackgroundTransparency = 0.8, BackgroundColor3 = Theme.SurfaceHover})
-                    end)
-                    optBtn.MouseButton1Click:Connect(function()
-                        currentOption = opt
-                        closeDropdown()
-                        cb(opt)
-                    end)
+                    local optBtn = Instance.new("TextButton"); optBtn.Size = UDim2.new(1,0,0,26); optBtn.BackgroundColor3 = Theme.SurfaceHover; optBtn.BackgroundTransparency = 0.8; optBtn.Text = tostring(opt); optBtn.TextColor3 = Theme.Text; optBtn.TextSize = 12; optBtn.Font = Enum.Font.Gotham; optBtn.AutoButtonColor = false; optBtn.LayoutOrder = i; optBtn.ZIndex = 201; optBtn.Parent = optionsFrame; AddCorner(optBtn, 4)
+                    optBtn.MouseEnter:Connect(function() Tween(optBtn, 0.15, {BackgroundTransparency = 0.3, BackgroundColor3 = _currentAccentColor}) end)
+                    optBtn.MouseLeave:Connect(function() Tween(optBtn, 0.15, {BackgroundTransparency = 0.8, BackgroundColor3 = Theme.SurfaceHover}) end)
+                    optBtn.MouseButton1Click:Connect(function() currentOption = opt; closeDD(); cb(opt) end)
                 end
 
-                dBtn.MouseButton1Click:Connect(function()
-                    if isOpen then closeDropdown() else openDropdown() end
-                end)
-
+                dBtn.MouseButton1Click:Connect(function() if isOpen then closeDD() else openDD() end end)
                 dBtn.MouseEnter:Connect(function() Tween(dBtn, 0.15, {BackgroundColor3 = Theme.SurfaceHover}) end)
                 dBtn.MouseLeave:Connect(function() Tween(dBtn, 0.15, {BackgroundColor3 = Theme.SliderBg}) end)
 
-                -- Fechar quando clicar fora
-                UserInputService.InputBegan:Connect(function(input)
-                    if isOpen and input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        task.delay(0.1, function()
-                            if isOpen then
-                                local mousePos = UserInputService:GetMouseLocation()
-                                local optPos = optionsFrame.AbsolutePosition
-                                local optSize = optionsFrame.AbsoluteSize
-                                local btnPos = dBtn.AbsolutePosition
-                                local btnSize = dBtn.AbsoluteSize
-
-                                local inOpt = mousePos.X >= optPos.X and mousePos.X <= optPos.X + optSize.X and mousePos.Y >= optPos.Y and mousePos.Y <= optPos.Y + optSize.Y
-                                local inBtn = mousePos.X >= btnPos.X and mousePos.X <= btnPos.X + btnSize.X and mousePos.Y >= btnPos.Y and mousePos.Y <= btnPos.Y + btnSize.Y
-
-                                if not inOpt and not inBtn then
-                                    closeDropdown()
-                                end
-                            end
-                        end)
-                    end
-                end)
-
                 local API = {}
-                function API:Set(v) currentOption = v; dBtn.Text = tostring(v) .. " ▾"; cb(v) end
+                function API:Set(v) currentOption = v; dBtn.Text = tostring(v).." ▾"; cb(v) end
                 function API:Get() return currentOption end
                 return API
             end
@@ -1004,17 +785,7 @@ function GenarixUI:CreateWindow(config)
             -- LABEL
             function Section:CreateLabel(text)
                 elementOrder = elementOrder + 1
-                local l = Instance.new("TextLabel")
-                l.Size = UDim2.new(1, 0, 0, 20)
-                l.BackgroundTransparency = 1
-                l.Text = text or ""
-                l.TextColor3 = Theme.TextDim
-                l.TextSize = 12
-                l.Font = Enum.Font.Gotham
-                l.TextWrapped = true
-                l.TextXAlignment = Enum.TextXAlignment.Left
-                l.LayoutOrder = elementOrder
-                l.Parent = sFrame
+                local l = Instance.new("TextLabel"); l.Size = UDim2.new(1,0,0,20); l.BackgroundTransparency = 1; l.Text = text or ""; l.TextColor3 = Theme.TextDim; l.TextSize = 12; l.Font = Enum.Font.Gotham; l.TextWrapped = true; l.TextXAlignment = Enum.TextXAlignment.Left; l.LayoutOrder = elementOrder; l.Parent = sFrame
                 local API = {}
                 function API:Set(t) l.Text = t end
                 return API
@@ -1022,10 +793,8 @@ function GenarixUI:CreateWindow(config)
 
             return Section
         end
-
         return Tab
     end
-
     return Window
 end
 
